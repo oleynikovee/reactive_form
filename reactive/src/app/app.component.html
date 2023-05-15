@@ -12,7 +12,7 @@
     <ng-container *ngIf="!isArrayType(field.value)">
       <input type="{{field.type}}" [id]="field.id" [disabled]='isDesibledText' *ngIf='field.type=="text"'>
       <input type="{{field.type}}" [id]="field.id" [checked]="isChecked" #checkbox (change)="onCheckboxChange(checkbox.checked)" *ngIf='field.type=="checkbox"'>
-      <input type="{{field.type}}" [id]="field.id" (keyup)="onPressNumber($event)" *ngIf='field.type=="number"'>
+      <input type="{{field.type}}" [id]="field.id" (change)="onPressNumber($event)" *ngIf='field.type=="number"'>
     </ng-container>
   </div>
   <button mat-raised-button color="primary" [disabled]='isDesibledSubmit' (click)="onSubmit()">Submit</button>
