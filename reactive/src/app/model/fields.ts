@@ -13,3 +13,5 @@ export interface Field {
     field: number;
     value: string;
   }
+
+  export type isOpen=Record<string,boolean>;

@@ -1,19 +1,18 @@
 <div class="container">
   <div *ngFor="let field of fields">
     <label [for]="field.id">Label for {{ field.type }}:</label>
-    <ng-container *ngIf="isArrayType(field.value)">
-      <div *ngFor="let value of field.value">
-        <label>
-          {{ value }}
-        </label>
-        <input type="{{ field.type }}" value="{{value}}" name="{{field.id}}"  (change)="onRadioSelected($event)">
-      </div>
-    </ng-container>
-    <ng-container *ngIf="!isArrayType(field.value)">
-      <input type="{{field.type}}" [id]="field.id" [disabled]='isDesibledText' *ngIf='field.type=="text"'>
-      <input type="{{field.type}}" [id]="field.id" [checked]="isChecked" #checkbox (change)="onCheckboxChange(checkbox.checked)" *ngIf='field.type=="checkbox"'>
-      <input type="{{field.type}}" [id]="field.id" (change)="onPressNumber($event)" *ngIf='field.type=="number"'>
-    </ng-container>
+      <ng-container  *ngIf='field.type=="radio"'>
+        <input type="{{ field.type }}"[id]="field.id" value="{{field.value}}" name="{{field.id}}"  (change)="onChanged($event)">
+      </ng-container>
+      <ng-container  *ngIf='field.type=="text"'>
+        <input type="{{field.type}}" [id]="field.id" [disabled]='!isOpenList[field.id]' (change)="onChanged($event)">
+      </ng-container>
+      <ng-container  *ngIf='field.type=="checkbox"'>
+        <input type="{{field.type}}" [id]="field.id" [value]="field.id" (change)="onChanged($event)">
+      </ng-container>
+      <ng-container  *ngIf='field.type=="number"'>
+        <input type="{{field.type}}" [id]="field.id" (change)="onChanged($event)">
+      </ng-container>
   </div>
   <button mat-raised-button color="primary" [disabled]='isDesibledSubmit' (click)="onSubmit()">Submit</button>
 </div>

@@ -1,6 +1,6 @@
-import { AfterViewInit, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators, FormBuilder } from '@angular/forms';
-import {Field} from 'src/app/model/fields'
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { FormGroup, FormBuilder } from '@angular/forms';
+import {Condition, Field, isOpen} from 'src/app/model/fields'
  
 @Component({
   selector: 'app-root',
@@ -23,7 +23,7 @@ export class AppComponent implements OnInit{
         "cond": [
             {
                 // Як взаємдіють вимоги ("and", "or")
-                "join": "",
+                "join": "or",
                 // id поля яке перевіряється
                 "field": 2,
                 // Значення яке повинно бути у поля ("empty", "fill", "<radion_variant>")
@@ -46,10 +46,7 @@ export class AppComponent implements OnInit{
     {
         "id": 3,
         "type": "radio",
-        "value": [
-            "Variant 1",
-            "Variant 2"
-        ],
+        "value": "Variant 1",
         "required": true,
         "cond": []
     },
@@ -61,55 +58,162 @@ export class AppComponent implements OnInit{
         "cond": []
     }
   ];
+  conditions:string[]=[];
   reactiveForm!: FormGroup;
-  isChecked:boolean=false;
-  selectedRadio:string="";
-  selectedNumber:string="";
   isDesibledSubmit=true;
-  isDesibledText=true;
+
+  isRequiredList:number[]=[];
+  isOpenList:isOpen={};
+  isClosedList:isOpen={};
+  isChengedGL:boolean=false;
 
   constructor(private formBuilder: FormBuilder, private cdRef:ChangeDetectorRef) {}
  
   ngOnInit() {
-    this.createForm();
+    //this.createForm();
+    this.addEvents();
     this.validateBtnSubmit();
   }
-  createForm(){
-    const formControls:Record<number, any> = {};
-    for (const field of this.fields) {
-      formControls[field.id]=[null, field.required ? Validators.required : null];
-    } 
-    this.reactiveForm = this.formBuilder.group(formControls);
+
+  addEvents(){
+    this.fields.map(field=>{
+      field.required?this.isRequiredList.push(field.id):null;
+      field.cond.length>0?this.isOpenList[field.id]=false:this.isOpenList[field.id]=true;
+    });
   }
-   onSubmit() {
+
+  async onChanged(event:any){
+    let id=event.target.id;
+    await this.isOpenList[id]!=true?this.isOpenList[id]=this.checkConds(id):this.findFalse();
+    if(this.isChengedGL==false){
+      await this.dirtyCheck();
+    }
+    this.isChengedGL=false;
+    this.validateBtnSubmit();
+  }
+
+  findFalse(){
+    this.fields.map(field=>{
+      this.isOpenList[field.id]!=true?this.isOpenList[field.id]=this.checkConds(field.id.toString()):null;
+    });
+  }
+
+  dirtyCheck(){
+    this.fields.map(field=>{
+      field.cond.length>0?this.isOpenList[field.id]=this.reverseCheckConds(field.id.toString()):null;
+    });
+  }
+
+
+  checkConds(id:string):boolean{
+    let conds:Condition[]=this.fields.find(item=> item.id==parseInt(id))!.cond;
+    console.log(conds);
+    if(conds[0]?.join=="or"){
+      let states:boolean[]=new Array(conds?.length);
+      for(let condition of conds){
+        let el=document.getElementById(condition.field.toString()) as HTMLInputElement;
+        switch(condition.value){
+          case "empty":{
+            el.value.trim()==""?states.push(true):null;
+            break;
+          }
+          case "fill":{
+            (el.value.trim()==el.id && el.checked)?states.push(true):null;
+            break;
+          }
+          default:{
+            (el.value==condition.value && el.checked==true)?states.push(true):null;
+            break;
+          }
+        }
+      }
+      if(states.includes(true)){
+        this.isChengedGL=true;
+        return true;
+      }
+      return false;
+    }else{
+      let states:boolean[]=new Array(conds?.length);
+      for(let condition of conds){
+        let el=document.getElementById(condition.field.toString()) as HTMLInputElement;
+        switch(condition.value){
+          case "empty":{
+            el.value.trim()==""?states.push(true):states.push(false);
+            break;
+          }
+          case "fill":{
+            el.value.trim()!=""?states.push(true):states.push(false);
+            break;
+          }
+          default:{
+            (el.value== condition.value && el.checked==true)?states.push(true):states.push(false);
+            break;
+          }
+        }
+      }
+      return states.every((state) => state === true)
+    }
+  }
+
+  reverseCheckConds(id:string):boolean{
+    let conds:Condition[]=this.fields.find(item=> item.id==parseInt(id))!.cond;
+    if(conds[0]?.join=="or"){
+      let states:boolean[]=new Array(conds?.length);
+      for(let condition of conds){
+        let el=document.getElementById(condition.field.toString()) as HTMLInputElement;
+        switch(condition.value){
+          case "empty":{
+            el.value.trim()==""?states.push(false):states.push(true);
+            break;
+          }
+          case "fill":{
+            (el.value.trim()==el.id && el.checked==false)?states.push(false):states.push(true);
+            break;
+          }
+          default:{
+            (el.value==condition.value && el.checked==false)?states.push(false):states.push(true);
+            break;
+          }
+        }
+      }
+      if(states.includes(true)){
+        this.isChengedGL=true;
+        return true;
+      }
+      return false;
+    }else{
+      let states:boolean[]=new Array(conds?.length);
+      for(let condition of conds){
+        let el=document.getElementById(condition.field.toString()) as HTMLInputElement;
+        switch(condition.value){
+          case "empty":{
+            el.value.trim()==""?states.push(false):states.push(true);
+            break;
+          }
+          case "fill":{
+            (el.value.trim()==el.id && el.checked==false)?states.push(false):states.push(true);
+            break;
+          }
+          default:{
+            (el.value== condition.value && el.checked==true)?states.push(false):states.push(true);
+            break;
+          }
+        }
+      }
+      return states.every((state) => state === true)
+    }
+  }
+  onSubmit() {
     alert('SUBMIT')
    }
   
-   isArrayType(type:any): boolean {
+  isArrayType(type:any): boolean {
     return Array.isArray(type);
   }
 
-  onPressNumber(event:any){
-    this.selectedNumber=event.target.value;
-    this.validateBtnSubmit();
-  }
-
-  onRadioSelected(event:any){
-    this.selectedRadio=event.target.value;
-    this.validateBtnSubmit();
-    this.validateTextField();
-  }
-
-  onCheckboxChange(checked: boolean) {
-    this.isChecked = checked;
-    this.validateTextField();
-  }
-
   validateBtnSubmit(){
-    (this.selectedRadio!="" && this.selectedNumber!="")?this.isDesibledSubmit=false:this.isDesibledSubmit=true;
-  }
-
-  validateTextField(){
-    (this.selectedRadio=="Variant 1" || this.isChecked==true)?this.isDesibledText=false:this.isDesibledText=true;
+    let el3=document.getElementById("3") as HTMLInputElement;
+    let el4=document.getElementById("4") as HTMLInputElement;
+    (el3.checked==true && el4.value!="")?this.isDesibledSubmit=false:this.isDesibledSubmit=true;
   }
 }
