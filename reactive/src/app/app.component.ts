@@ -110,6 +110,6 @@ export class AppComponent implements OnInit{
   }
 
   validateTextField(){
-    (this.selectedRadio=="Variant 1" && this.isChecked==true)?this.isDesibledText=false:this.isDesibledText=true;
+    (this.selectedRadio=="Variant 1" || this.isChecked==true)?this.isDesibledText=false:this.isDesibledText=true;
   }
 }
